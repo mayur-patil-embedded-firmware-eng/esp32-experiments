@@ -1,0 +1,67 @@
+#include <ESP8266WiFi.h>
+extern "C" {
+  #include <espnow.h>
+}
+
+/* ================= CONFIG ================= */
+
+/* MUST match ESP32 payload exactly */
+typedef struct {
+  uint32_t counter;
+  float temperature;
+} payload_t;
+
+/* ========================================== */
+
+void onDataRecv(uint8_t *mac, uint8_t *incomingData, uint8_t len)
+{
+  if (len != sizeof(payload_t)) {
+    Serial.println("Invalid payload size");
+    return;
+  }
+
+  payload_t data;
+  memcpy(&data, incomingData, sizeof(data));
+
+  Serial.print("From MAC: ");
+  for (int i = 0; i < 6; i++) {
+    Serial.printf("%02X", mac[i]);
+    if (i < 5) Serial.print(":");
+  }
+  Serial.println();
+
+  Serial.printf("Counter: %lu\n", data.counter);
+  Serial.printf("Temperature: %.2f\n", data.temperature);
+  Serial.println("----------------------");
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(200);
+  Serial.println();
+
+  /* WiFi must be STA mode */
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();   // IMPORTANT: stay on fixed channel
+
+  Serial.print("ESP8266 MAC: ");
+  Serial.println(WiFi.macAddress());
+
+  /* Init ESP-NOW */
+  if (esp_now_init() != 0) {
+    Serial.println("ESP-NOW init failed");
+    return;
+  }
+
+  /* Register receive callback */
+  esp_now_set_self_role(ESP_NOW_ROLE_SLAVE);
+  esp_now_register_recv_cb(onDataRecv);
+
+  Serial.println("ESP-NOW Receiver ready");
+}
+
+void loop()
+{
+  /* Nothing needed here */
+}
