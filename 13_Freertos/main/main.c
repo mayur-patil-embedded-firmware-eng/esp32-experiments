@@ -12,6 +12,13 @@ void task1(void *pvParameters)
         vTaskDelay(pdMS_TO_TICKS(1000));   // sleep 1 sec
     }
 }
+void task2(void *pvParameters)
+{
+    while (1) {
+        ESP_LOGI(TAG, "Task 2 running core 1");
+        vTaskDelay(pdMS_TO_TICKS(1000));   // sleep 1 sec
+    }
+}
 
 void app_main(void)
 {
@@ -23,4 +30,14 @@ void app_main(void)
         5,                 // Priority
         NULL               // Task handle
     );
+    xTaskCreatePinnedToCore(
+    task2,
+    "TaskPinned",
+    2048,
+    NULL,
+    5,
+    NULL,
+    1          // Core 1
+);
+
 }
